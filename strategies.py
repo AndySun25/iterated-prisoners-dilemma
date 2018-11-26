@@ -94,6 +94,110 @@ class SuspiciousTitForTatStrategy(TitForTwoTatsStrategy):
         super().post_move(own_move, opponent_move)
 
 
+class GenerousTitForTatStrategy(TitForTatStrategy):
+    """
+    Same as TFT, except that it cooperates with a probability q when the
+    opponent defects.
+    """
+    name = "Generous tit for tat"
+
+    def __init__(self, cooperation_probability=5) -> None:
+        # Cooperation probability from 0-100 where 0 will never cooperate
+        # and 100 will always cooperate.
+        self.cooperation_probability = cooperation_probability
+        super().__init__()
+
+    def get_next_move(self):
+        if self.previous_opponent_move == Move.DEFECT:
+            if random.randint(0, 99) < self.cooperation_probability:
+                return Move.COOPERATE
+            return Move.DEFECT
+        else:
+            return Move.COOPERATE
+
+
+class HardTitForTatStrategy(AbstractStrategy):
+    """
+    Cooperates on the first move, and defects if the opponent has defects
+    on any of the previous three moves, else cooperates.
+    """
+    name = "Hard tit for tat"
+
+    def __init__(self) -> None:
+        self.opponent_latest_moves = (Move.COOPERATE, Move.COOPERATE, Move.COOPERATE)
+        super().__init__()
+
+    def get_next_move(self):
+        if Move.DEFECT in self.opponent_latest_moves:
+            return Move.DEFECT
+        else:
+            return Move.COOPERATE
+
+    def post_move(self, own_move, opponent_move):
+        self.opponent_latest_moves = (opponent_move,) + self.opponent_latest_moves[1:]
+        super().post_move(own_move, opponent_move)
+
+
+class ReverseTitForTatStrategy(TitForTatStrategy):
+    """
+    It does the reverse of TFT. It defects on the first move, then plays the
+    reverse of the opponent’s last move.
+    """
+    name = "Reverse tit for tat"
+
+    def get_next_move(self):
+        if self.previous_opponent_move == Move.DEFECT:
+            return Move.COOPERATE
+        else:
+            return Move.DEFECT
+
+
+class AdaptiveStrategy(AbstractStrategy):
+    """
+    Starts with C,C,C,C,C,C,D,D,D,D,D and then takes choices which have given
+    the best average score re-calculated after every move.
+    """
+    name = "Adaptive"
+    initial_moves = [
+        Move.COOPERATE,
+        Move.COOPERATE,
+        Move.COOPERATE,
+        Move.COOPERATE,
+        Move.COOPERATE,
+        Move.DEFECT,
+        Move.DEFECT,
+        Move.DEFECT,
+        Move.DEFECT,
+        Move.DEFECT,
+    ]
+
+    def __init__(self) -> None:
+        self.planned_moves = self.initial_moves.copy()
+        self.move_history = []
+        super().__init__()
+
+    @property
+    def average_cooperation_result(self):
+        return sum(outcome.value for move, outcome in self.move_history if move == Move.COOPERATE)
+
+    @property
+    def average_defection_result(self):
+        return sum(outcome.value for move, outcome in self.move_history if move == Move.DEFECT)
+
+    def get_next_move(self):
+        if self.planned_moves:
+            return self.planned_moves.pop()
+
+        if self.average_cooperation_result >= self.average_defection_result:
+            return Move.COOPERATE
+        else:
+            return Move.DEFECT
+
+    def post_move(self, own_move, opponent_move):
+        self.move_history.append((own_move, outcomes[own_move][opponent_move]))
+        super().post_move(own_move, opponent_move)
+
+
 class GrimTriggerStrategy(AbstractStrategy):
     """
     Start by cooperating, continue cooperating until opponent plays defect

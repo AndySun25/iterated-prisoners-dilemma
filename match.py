@@ -1,4 +1,21 @@
+import uuid
+
 from moves import outcomes
+
+
+class Entity:
+    def __init__(self, strategy_class) -> None:
+        self.strategy_class = strategy_class
+        self.memory = {}
+        self.uuid = uuid.uuid4()
+
+    def get_strategy_instance(self, opponent: 'Entity'):
+        try:
+            return self.memory[opponent.uuid]
+        except KeyError:
+            strategy_instance = self.strategy_class()
+            self.memory[opponent.uuid] = strategy_instance
+            return strategy_instance
 
 
 class Match:
@@ -30,3 +47,8 @@ class Match:
         for i in range(self.rounds):
             results.append(self._play_round(strategy_1, strategy_2))
         return results
+
+    def play_entities(self, entity_1: Entity, entity_2: Entity):
+        entity_1_strategy = entity_1.get_strategy_instance(entity_2)
+        entity_2_strategy = entity_2.get_strategy_instance(entity_1)
+        self._play_round(entity_1_strategy, entity_2_strategy)

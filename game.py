@@ -44,7 +44,7 @@ class Game:
 
 if __name__ == '__main__':
     game = Game(strategies.strategies)
-    results = sorted([(k, v) for k, v in game.round_robin(rounds=10).items()], key=lambda x: x[1], reverse=True)
+    results = sorted([(k, v) for k, v in game.round_robin(rounds=100).items()], key=lambda x: x[1], reverse=True)
 
     print("\nScore:")
     for result in results:
