@@ -6,6 +6,9 @@ from moves import Move, outcomes, Result
 class AbstractStrategy:
     name = None
 
+    def __hash__(self):
+        return self.name
+
     def get_next_move(self):
         raise NotImplementedError()
 
